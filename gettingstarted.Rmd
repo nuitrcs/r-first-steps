@@ -1,0 +1,228 @@
+---
+title: 'First Steps with R: BDSD 2020'
+author: "Christina Maimone"
+date: "2020-02-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+All of these materials are available at https://github.com/nuitrcs/r-first-steps to reference later.  
+
+# Load the Data
+
+The data set comes from the [GOSSIS Consortium at MIT](https://gossis.mit.edu/).  The Global Open Source Severity of Illness Score (GOSSIS) aims to predict in-hospital mortality.  The dataset is being used in the Women in Data Science [(WiDS) Kaggle Challenge](https://www.kaggle.com/c/widsdatathon2020). We're using just a subset of that data here focused on demographics.  The dataset also contains lab results, vitals, and other predictors.
+
+## Read In
+
+We'll start by reading the data into R.  
+
+```{r}
+gossis <- read.csv("gossis_subset.csv")
+```
+
+## Check
+
+And check to see what variables it contains and how many observataions:
+
+What are the column (variable) names?
+
+```{r}
+names(gossis)
+```
+
+How many variables and observations?
+
+```{r}
+dim(gossis)
+```
+
+The first number is the number of rows (observations) and the second in the number of columns (variables).  We could also use:
+
+```{r, eval=FALSE}
+nrow(gossis)
+ncol(gossis)
+```
+
+Look at the data:
+
+```{r, eval=FALSE}
+View(gossis)
+```
+
+
+# Explore
+
+## Variable Values
+
+### Deaths
+
+How many deaths in the data?
+
+```{r}
+table(gossis$hospital_death)
+```
+
+As a proportion?
+
+```{r}
+prop.table(table(gossis$hospital_death))
+```
+
+The results of the call to the inside function (`table`) are sent as input to the outside function (`prop.table`).
+
+### Gender
+
+```{r}
+table(gossis$gender)
+```
+
+
+### Check for Missing Data
+
+`NA` stands for missing data in R.  Let's see if there are missing values in any of our variables.  `summary()` gives us basic stats about each variable, including a count of missing values:
+
+```{r}
+summary(gossis)
+```
+
+Yep!  There are missing values for gender. 
+
+There are multiple R packages (sets of functions) that help summarize datasets.  One such package is called summarytools.  First, to use a package we'd need to install it once for a given computer and version of R.  In the session, this has already been done.  Second, we need to load it each time we run R and want to use it.   The `library()` function loads an installed package. 
+
+Normally, we want to put any `library()` statements at the top of the file. This lets people know what packages are needed to run the code.
+
+```{r, message=FALSE, warning=FALSE}
+library(summarytools)  # normally put this at the top of your file
+```
+
+Now, we can use one of the functions in summarytools:
+
+```{r, eval=FALSE}
+dfSummary(gossis)
+```
+
+The output in the console can be a little tough to read for large datasets, or if our console isn't very wide. But it also makes a nice html table:
+
+```{r, eval=FALSE}
+# When working in R:
+view(dfSummary(gossis, valid.col = FALSE))
+```
+
+```{r}
+# When producing an HTML file from R Markdown
+view(dfSummary(gossis, valid.col = FALSE), method="render")
+```
+
+It can also print summary stats like `summary()` for the numeric variables.  It's good at detecting which variables are really categorical even though they have numeric values (it excludes them).  
+
+```{r, eval=FALSE}
+# When working in R:
+view(descr(gossis, transpose=TRUE, stats="common"))
+```
+
+```{r}
+# When producing an HTML file from R Markdown
+view(descr(gossis, transpose=TRUE, stats="common"), method="render")
+```
+
+### Remove Rows with Missing Gender
+
+Let's change our dataset to remove observations where gender is missing (which may not be a good analysis decision!)
+
+```{r}
+gossis <- gossis[!is.na(gossis$gender),]
+```
+
+There's a lot in that statement:
+
+* `is.na()` is a function that returns `TRUE` for each missing value.
+* `!` is the symbol for NOT in R
+* `!is.na(gossis$gender)` selects observations that aren't missing
+* Square brackets `[]` let us select only part of our data frame
+* Inside square brackets, we have `[rows, columns]`.  If one part is blank, it means we want all rows or all columns
+* `gossis[!is.na(gossis$gender),]` selects from `gossis` only rows where the value of `gossis$gender` isn't missing
+* Then we overwrite our variable `gossis` to now refer to only the subset without missing values of gender.
+* Right-side of the assignment happens first, so this works
+
+
+### Deaths and Gender
+
+Do men and women die at different rates?
+
+`margin=2` indicates to compute proportions by row instead of overall or by column
+
+```{r}
+prop.table(table(gossis$gender, gossis$hospital_death), margin=2)
+```
+
+Or prettier table with counts and proportions with `ctable` function from `summarytools`:
+
+```{r}
+ctable(gossis$gender, gossis$hospital_death)
+```
+
+
+## T-test
+
+Test the difference with a t-test.  The syntax here is `variable to test ~ grouping variable`
+
+```{r}
+t.test(gossis$hospital_death ~ gossis$gender)
+```
+
+
+# Plot the Data
+
+We'll use the `ggplot2` package here for visualization.  You don't have to use `ggplot2`, but I recommend it for many applications.
+
+```{r}
+library(ggplot2)  # normally put this at the top of your file
+```
+
+## Make a Bar Plot
+
+Plot distribution of `hospital_death`
+
+```{r}
+ggplot(gossis, aes(x=hospital_death)) +  # what data and variables to use
+  geom_bar()  # what type of plot to make
+```
+
+Let's split by gender
+
+```{r}
+ggplot(gossis, aes(x=hospital_death)) +  
+  geom_bar() + 
+  facet_wrap(gender ~ .)  # make a separate plot for each gender
+```
+
+
+## Cleaner Plot
+
+To clean this up for better presentation, we need to add some elements to the plot.  Let's also plot proportion instead of counts
+
+```{r}
+# make the two variables categorical with better labels
+gossis$gender <- factor(gossis$gender, 
+                        levels=c("M", "F"), 
+                        labels=c("Male", "Female"))
+gossis$hospital_death <- factor(gossis$hospital_death, 
+                                levels=c(0, 1),
+                                labels=c("No", "Yes"))
+
+# style and label the plot
+ggplot(gossis, aes(x=hospital_death)) +  
+  geom_bar(aes(y=stat(prop), group=1)) +  # change to plot proportion instead of count
+  facet_wrap(gender ~ .)  +
+  labs(x="Patient Death", y="Proportion of Cases", title="Hospital Deaths by Gender") + # labels
+  scale_y_continuous(limits = c(0,1)) +  # y-axis limits
+  theme_minimal() +  # base styling
+  theme(panel.grid.major.x = element_blank(),  # remove vertical grid lines
+        panel.grid.minor.x = element_blank(),  # remove vertical grid lines
+        strip.text = element_text(size=12, hjust=0))  # style Male and Female labels
+```
+
+The "No" proportion is redundant if you have the "Yes", and removing it would make it easier to compare proportions by gender.  But to make that plot, we'd need to do more data manipulation, which we don't have time for here!
