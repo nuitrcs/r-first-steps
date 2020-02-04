@@ -98,6 +98,8 @@ Normally, we want to put any `library()` statements at the top of the file. This
 library(summarytools)  # normally put this at the top of your file
 ```
 
+This is a package someone wrote to solve a problem!  You could write one too, or help improve this one.  Code is at https://github.com/dcomtois/summarytools.  
+
 Now, we can use one of the functions in summarytools:
 
 ```{r, eval=FALSE}

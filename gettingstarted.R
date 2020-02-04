@@ -1,20 +1,32 @@
+# You can find a version of this file with output and notes at:
+# https://nuitrcs.github.io/r-first-steps/gettingstarted.html
 
-# Read the data in
+# Tell R where our files are;
+# Better to use Projects though to set the path;
+# The r-first-steps.Rproj file is a project file
+# File > Open Project... > select the .RProj file
+setwd("workshop_files/")
+
+
+# Read the data in and give it the name gossis;
+# Data definitions in "WiDS Datathon 2020 Dictionary.csv"
+# Data from: Global Open Source Severity of Illness Score (GOSSIS),
+# GOSSIS Consortium at MIT, https://gossis.mit.edu/
 gossis <- read.csv("gossis_subset.csv")
 
 
-# run some checks
-names(gossis)
+# run some checks on the data set
+names(gossis)  # names of the variables (columns)
 
-dim(gossis)
+dim(gossis)  # number of rows, columns
 
-View(gossis)
+View(gossis)  # open up the data viewer to see the data
 
 
 # Look at key variable: hospital_death
-table(gossis$hospital_death)
+table(gossis$hospital_death)  # count of different values
 
-prop.table(table(gossis$hospital_death))
+prop.table(table(gossis$hospital_death))  # proportion instead of count
 
 # Look at gender
 table(gossis$gender)
@@ -25,13 +37,14 @@ summary(gossis)
 
 
 # Use a package to help us summarize:
+# https://github.com/dcomtois/summarytools
 library(summarytools)  # normally put this at the top of your file
 
-dfSummary(gossis)
+dfSummary(gossis)  # prints in console
 
-view(dfSummary(gossis, valid.col = FALSE))
+view(dfSummary(gossis, valid.col = FALSE))  # Opens in Viewer pane
 
-view(descr(gossis, transpose=TRUE, stats="common"))
+view(descr(gossis, transpose=TRUE, stats="common"))  # Opens in Viewer pane
 
 
 # Remove rows with missing gender
@@ -39,10 +52,13 @@ gossis <- gossis[!is.na(gossis$gender),]
 
 
 # Gender and Death
-prop.table(table(gossis$gender, gossis$hospital_death), margin=2)
+prop.table(table(gossis$gender, gossis$hospital_death), 
+           margin=2)  # margin is how to take proportion (by column here)
 
 ctable(gossis$gender, gossis$hospital_death)  ## from summarytools
 
+# T-test of difference in death rate by gender:
+# variable to test ~ grouping variable
 t.test(gossis$hospital_death ~ gossis$gender)
 
 
